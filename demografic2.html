@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>דשבורד חכם לרשויות – אוכלוסייה וגיל</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+    }
+    .page {
+      max-width: 1300px;
+      margin: 16px auto 32px;
+      padding: 0 12px;
+    }
+    header {
+      margin-bottom: 16px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.9rem;
+    }
+    header p {
+      margin: 4px 0 0;
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+    .tag code {
+      background: transparent;
+      padding: 0;
+      font-size: 0.8rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 950px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px 18px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+
+    /* side */
+    .side-card h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+    .side-card section {
+      margin-bottom: 14px;
+    }
+    .side-card label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      color: #374151;
+    }
+    .side-card input[type="number"],
+    .side-card input[type="text"],
+    .side-card select {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+    .side-card input:focus,
+    .side-card select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px rgba(37,99,235,0.4);
+    }
+    .side-card select[multiple] {
+      min-height: 180px;
+    }
+    .mini-buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .small {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+    .error {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #b91c1c;
+    }
+    .loading {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+    }
+    .kpi {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kpi-label {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .kpi-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 950px) {
+      .charts {
+        grid-template-columns: 1fr;
+      }
+    }
+    .chart-card h3 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+    }
+    .chart-card canvas {
+      max-height: 260px;
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .table-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .table-header span {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 420px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 750px;
+      font-size: 0.8rem;
+    }
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      z-index: 1;
+    }
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: right;
+      white-space: nowrap;
+    }
+    th {
+      font-weight: 600;
+      color: #374151;
+    }
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    .no-data {
+      text-align: center;
+      padding: 16px;
+      color: #6b7280;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: #4b5563;
+    }
+    .pagination-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* buttons */
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #111827;
+    }
+    button.primary {
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    /* prediction */
+    .pred-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+      margin-bottom: 10px;
+    }
+    .pred-result {
+      margin-top: 4px;
+      font-size: 0.85rem;
+      color: #111827;
+    }
+    .pred-main {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 0.8rem;
+    }
+    code {
+      background: #e5e7eb;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>דשבורד חכם לרשויות – אוכלוסייה, גיל וניבוי</h1>
+      <p>
+        נתונים מתוך מאגר אוכלוסייה לפי גיל ויישוב ב־<strong>data.gov.il</strong>,
+        נטענים אוטומטית דרך
+        <code>datastore_search</code>. ניתן לבחור מספר רשויות ולהשוות ביניהן,
+        וכן לבצע ניבוי קדימה של האוכלוסייה עם מחשבון גידול.
+      </p>
+      <div class="tag">
+        resource_id:
+        <code>64edd0ee-3d5d-43ce-8562-c336c24dbc1f</code>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- SIDE PANEL -->
+      <aside class="card side-card">
+        <h2>בחירה ופילטרים</h2>
+
+        <section>
+          <label for="municipalSelect">רשויות להשוואה (בחירה מרובה)</label>
+          <select id="municipalSelect" multiple></select>
+          <div class="mini-buttons">
+            <button id="selectTopByPop" type="button">בחר 10 הגדולים</button>
+            <button id="clearSelection" type="button">נקה בחירה</button>
+          </div>
+          <div class="small">
+            ניתן לבחור כמה רשויות (Ctrl/⌘ + קליק או גרירה). אם לא נבחר כלום – החישובים יהיו על כל המאגר.
+          </div>
+        </section>
+
+        <section>
+          <label for="searchText">חיפוש (שם / סמל)</label>
+          <input id="searchText" type="text" placeholder="תל אביב / 5000..." />
+          <div class="small">משמש לסינון הרשומות בטבלה והגרפים, בנוסף לבחירה ברשימה.</div>
+        </section>
+
+        <section>
+          <label for="minPop">מינימום אוכלוסייה (סה״כ)</label>
+          <input id="minPop" type="number" placeholder="למשל 10000" />
+        </section>
+
+        <section>
+          <label for="districtFilter">נפה</label>
+          <select id="districtFilter">
+            <option value="">כל הנפות</option>
+          </select>
+        </section>
+
+        <section>
+          <label for="councilFilter">מועצה אזורית</label>
+          <select id="councilFilter">
+            <option value="">כל המועצות / ערים</option>
+          </select>
+        </section>
+
+        <section>
+          <button id="applyFilters" class="primary" type="button">החל סינון והשוואה</button>
+        </section>
+
+        <section>
+          <div id="loadState" class="loading">טוען נתונים מה-API...</div>
+          <div id="errorState" class="error" style="display:none;"></div>
+          <div class="pill">
+            🔁
+            <span class="small">
+              הנתונים מתעדכנים לפי המידע העדכני במאגר; הדשבורד מושך את המצב הנוכחי בכל רענון דף.
+            </span>
+          </div>
+        </section>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="main">
+        <!-- KPIs -->
+        <section class="card">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-label">סה״כ אוכלוסייה (רשויות נבחרות / מסוננות)</div>
+              <div class="kpi-value" id="kpiTotalPop">–</div>
+              <div class="kpi-sub">סכום עמודת <code>סהכ</code></div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">מס׳ רשויות בתמונה הנוכחית</div>
+              <div class="kpi-value" id="kpiCitiesCount">–</div>
+              <div class="kpi-sub">אחרי בחירה+פילטרים</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">% ילדים (0–18) מתוך כלל האוכלוסייה</div>
+              <div class="kpi-value" id="kpiChildrenShare">–</div>
+              <div class="kpi-sub">גיל_0_5 + גיל_6_18</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">% בני 65+ מתוך כלל האוכלוסייה</div>
+              <div class="kpi-value" id="kpiSeniorsShare">–</div>
+              <div class="kpi-sub">גיל_65_פלוס</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">יחס תלות (ילדים+קשישים / גילי העבודה)</div>
+              <div class="kpi-value" id="kpiDependency">–</div>
+              <div class="kpi-sub">ילדים+65+ חלקי גיל 19–64</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CHARTS COMPARISON -->
+        <section class="charts">
+          <div class="card chart-card">
+            <h3>אוכלוסייה לפי רשות (השוואה)</h3>
+            <canvas id="popCompareChart"></canvas>
+            <div class="small">
+              מציג את סה״כ האוכלוסייה לכל רשות נבחרת; אם לא נבחרו – מוצגות הרשויות המסוננות בעלות האוכלוסייה הגדולה ביותר.
+            </div>
+          </div>
+          <div class="card chart-card">
+            <h3>% ילדים ו-% 65+ לפי רשות</h3>
+            <canvas id="ageShareCompareChart"></canvas>
+            <div class="small">
+              לכל רשות – אחוז ילדים (0–18) ואחוז בני 65+ מתוך סה״כ האוכלוסייה.
+            </div>
+          </div>
+        </section>
+
+        <!-- PREDICTION -->
+        <section class="card">
+          <h3>מחשבון ניבוי אוכלוסייה לרשות נבחרת</h3>
+          <p class="muted">
+            זהו חישוב מתמטי פשוט בלבד: מניחים גידול שנתי קבוע <code>r%</code> ומחשבים
+            <code>אוכלוסייה עתידית = אוכלוסייה נוכחית × (1 + r/100)<sup>שנים</sup></code>.
+            אין כאן מודל רשמי או שימוש בנתוני עבר.
+          </p>
+
+          <div class="pred-grid">
+            <div>
+              <label for="predictionCity">בחר רשות לחיזוי</label>
+              <select id="predictionCity"></select>
+            </div>
+            <div>
+              <label for="predictionYears">שנות תחזית קדימה</label>
+              <input id="predictionYears" type="number" value="10" min="1" />
+            </div>
+            <div>
+              <label for="predictionGrowth">שיעור גידול שנתי משוער (%)</label>
+              <input id="predictionGrowth" type="number" step="0.1" value="2" />
+            </div>
+            <div>
+              <label for="predictionStartYear">שנת בסיס (לציון בלבד)</label>
+              <input id="predictionStartYear" type="number" placeholder="למשל 2023" />
+            </div>
+          </div>
+
+          <button id="runPrediction" class="primary" type="button">חשב תחזית</button>
+
+          <div class="pred-result" id="predictionResult">
+            טרם חושבה תחזית. בחר רשות, הזן שנים ו-% גידול ולחץ על "חשב תחזית".
+          </div>
+        </section>
+
+        <!-- TABLE -->
+        <section class="card">
+          <div class="table-header">
+            <h3>טבלת רשויות נבחרות / מסוננות</h3>
+            <span id="tableInfo">–</span>
+          </div>
+          <div class="table-wrapper">
+            <div class="no-data" id="noDataMsg">טוען נתונים...</div>
+            <table id="dataTable" style="display:none;">
+              <thead>
+                <tr>
+                  <th>סמל יישוב</th>
+                  <th>שם יישוב</th>
+                  <th>נפה</th>
+                  <th>מועצה אזורית</th>
+                  <th>סה״כ</th>
+                  <th>0–5</th>
+                  <th>6–18</th>
+                  <th>19–45</th>
+                  <th>46–55</th>
+                  <th>56–64</th>
+                  <th>65+</th>
+                  <th>% ילדים</th>
+                  <th>% 65+</th>
+                  <th>יחס תלות</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination" style="display:none;">
+            <div id="paginationInfo"></div>
+            <div class="pagination-buttons">
+              <button id="prevPage">← קודם</button>
+              <button id="nextPage">הבא →</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // ---- dataset constants ----
+    const RESOURCE_ID = "64edd0ee-3d5d-43ce-8562-c336c24dbc1f";
+    const DATASTORE_URL = "https://data.gov.il/api/3/action/datastore_search";
+
+    const FIELD_CODE = "סמל_ישוב";
+    const FIELD_NAME = "שם_ישוב";
+    const FIELD_NAFA = "נפה";
+    const FIELD_COUNCIL = "מועצה_אזורית";
+    const FIELD_TOTAL = "סהכ";
+    const FIELD_0_5 = "גיל_0_5";
+    const FIELD_6_18 = "גיל_6_18";
+    const FIELD_19_45 = "גיל_19_45";
+    const FIELD_46_55 = "גיל_46_55";
+    const FIELD_56_64 = "גיל_56_64";
+    const FIELD_65_PLUS = "גיל_65_פלוס";
+
+    // ---- state ----
+    let allRows = [];
+    let viewRows = []; // אחרי בחירה+פילטרים
+    let currentPage = 1;
+    const PAGE_SIZE = 25;
+
+    // DOM refs
+    const loadStateEl = document.getElementById("loadState");
+    const errorStateEl = document.getElementById("errorState");
+
+    const municipalSelect = document.getElementById("municipalSelect");
+    const selectTopByPopBtn = document.getElementById("selectTopByPop");
+    const clearSelectionBtn = document.getElementById("clearSelection");
+
+    const searchTextEl = document.getElementById("searchText");
+    const minPopEl = document.getElementById("minPop");
+    const districtFilterEl = document.getElementById("districtFilter");
+    const councilFilterEl = document.getElementById("councilFilter");
+    const applyFiltersBtn = document.getElementById("applyFilters");
+
+    const kpiTotalPop = document.getElementById("kpiTotalPop");
+    const kpiCitiesCount = document.getElementById("kpiCitiesCount");
+    const kpiChildrenShare = document.getElementById("kpiChildrenShare");
+    const kpiSeniorsShare = document.getElementById("kpiSeniorsShare");
+    const kpiDependency = document.getElementById("kpiDependency");
+
+    const popCompareChartCanvas = document.getElementById("popCompareChart");
+    const ageShareCompareChartCanvas = document.getElementById("ageShareCompareChart");
+
+    const predictionCityEl = document.getElementById("predictionCity");
+    const predictionYearsEl = document.getElementById("predictionYears");
+    const predictionGrowthEl = document.getElementById("predictionGrowth");
+    const predictionStartYearEl = document.getElementById("predictionStartYear");
+    const runPredictionBtn = document.getElementById("runPrediction");
+    const predictionResultEl = document.getElementById("predictionResult");
+
+    const noDataMsg = document.getElementById("noDataMsg");
+    const dataTable = document.getElementById("dataTable");
+    const tableBody = document.getElementById("tableBody");
+    const tableInfo = document.getElementById("tableInfo");
+
+    const paginationEl = document.getElementById("pagination");
+    const paginationInfo = document.getElementById("paginationInfo");
+    const prevPageBtn = document.getElementById("prevPage");
+    const nextPageBtn = document.getElementById("nextPage");
+
+    let popCompareChart = null;
+    let ageShareCompareChart = null;
+
+    // helpers
+    function setLoading(msg) {
+      loadStateEl.style.display = "block";
+      loadStateEl.textContent = msg;
+      errorStateEl.style.display = "none";
+    }
+    function setError(msg) {
+      errorStateEl.style.display = "block";
+      errorStateEl.textContent = msg;
+      loadStateEl.style.display = "none";
+    }
+    function clearStatus() {
+      loadStateEl.style.display = "none";
+      errorStateEl.style.display = "none";
+    }
+
+    function num(x) {
+      const n = typeof x === "number" ? x : parseFloat(String(x).replace(/,/g, ""));
+      return isNaN(n) ? 0 : n;
+    }
+    function formatInt(n) {
+      return n.toLocaleString("he-IL", { maximumFractionDigits: 0 });
+    }
+    function formatPct(numVal, denom) {
+      if (!denom || denom === 0) return "–";
+      const v = (numVal / denom) * 100;
+      return v.toFixed(1) + "%";
+    }
+
+    // ---- load dataset ----
+    async function loadAllData() {
+      try {
+        setLoading("טוען את כל הרשומות מה-DataStore...");
+        let limit = 1000;
+        let offset = 0;
+        let done = false;
+        const rows = [];
+
+        while (!done) {
+          const params = new URLSearchParams();
+          params.append("resource_id", RESOURCE_ID);
+          params.append("limit", String(limit));
+          params.append("offset", String(offset));
+          const url = DATASTORE_URL + "?" + params.toString();
+
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("שגיאת HTTP: " + res.status);
+          const json = await res.json();
+          if (!json.success) throw new Error("success=false מה-API");
+
+          const result = json.result || {};
+          const batch = result.records || [];
+          rows.push(...batch);
+
+          const total = result.total ?? rows.length;
+          offset += batch.length;
+          if (!batch.length || offset >= total) done = true;
+        }
+
+        allRows = rows;
+        clearStatus();
+
+        initDropdowns();
+        applyFilters(false);
+        initPredictionDropdown();
+      } catch (err) {
+        console.error(err);
+        setError("שגיאה בטעינת נתונים: " + err.message);
+      }
+    }
+
+    function initDropdowns() {
+      // רשימת רשויות
+      const sorted = [...allRows].sort((a, b) =>
+        String(a[FIELD_NAME]).localeCompare(String(b[FIELD_NAME]), "he")
+      );
+      municipalSelect.innerHTML = "";
+      sorted.forEach(row => {
+        const opt = document.createElement("option");
+        opt.value = String(row[FIELD_CODE]);
+        opt.textContent = String(row[FIELD_NAME]) + " (" + row[FIELD_CODE] + ")";
+        municipalSelect.appendChild(opt);
+      });
+
+      // נפות
+      const nafas = Array.from(
+        new Set(
+          allRows
+            .map(r => r[FIELD_NAFA])
+            .filter(v => v !== null && v !== undefined && v !== "")
+        )
+      ).sort((a, b) => String(a).localeCompare(String(b), "he"));
+      districtFilterEl.innerHTML = '<option value="">כל הנפות</option>';
+      nafas.forEach(n => {
+        const opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = String(n);
+        districtFilterEl.appendChild(opt);
+      });
+
+      // מועצות
+      const councils = Array.from(
+        new Set(
+          allRows
+            .map(r => r[FIELD_COUNCIL])
+            .filter(v => v !== null && v !== undefined && v !== "")
+        )
+      ).sort((a, b) => String(a).localeCompare(String(b), "he"));
+      councilFilterEl.innerHTML = '<option value="">כל המועצות / ערים</option>';
+      councils.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = String(c);
+        opt.textContent = String(c);
+        councilFilterEl.appendChild(opt);
+      });
+    }
+
+    function initPredictionDropdown() {
+      predictionCityEl.innerHTML = "";
+      const sorted = [...allRows].sort((a, b) =>
+        String(a[FIELD_NAME]).localeCompare(String(b[FIELD_NAME]), "he")
+      );
+      sorted.forEach(row => {
+        const opt = document.createElement("option");
+        opt.value = String(row[FIELD_CODE]);
+        opt.textContent = String(row[FIELD_NAME]) + " (" + row[FIELD_CODE] + ")";
+        predictionCityEl.appendChild(opt);
+      });
+    }
+
+    // ---- filters & selection ----
+    function getSelectedCodes() {
+      return Array.from(municipalSelect.selectedOptions).map(o => o.value);
+    }
+
+    function applyFilters(scrollToTable = true) {
+      const selectedCodes = getSelectedCodes();
+      const text = (searchTextEl.value || "").trim().toLowerCase();
+      const minPop = minPopEl.value ? parseInt(minPopEl.value, 10) : null;
+      const nafa = districtFilterEl.value;
+      const council = councilFilterEl.value;
+
+      viewRows = allRows.filter(row => {
+        let ok = true;
+
+        // בחירה מפורשת – אם יש, נשארים רק בה
+        if (selectedCodes.length) {
+          const code = String(row[FIELD_CODE]);
+          if (!selectedCodes.includes(code)) ok = false;
+        }
+
+        // פילטרים
+        const total = num(row[FIELD_TOTAL]);
+        if (minPop !== null && total < minPop) ok = false;
+
+        if (nafa) {
+          if (String(row[FIELD_NAFA] ?? "") !== nafa) ok = false;
+        }
+
+        if (council) {
+          if (String(row[FIELD_COUNCIL] ?? "") !== council) ok = false;
+        }
+
+        if (text) {
+          const codeStr = String(row[FIELD_CODE] ?? "").toLowerCase();
+          const nameStr = String(row[FIELD_NAME] ?? "").toLowerCase();
+          if (!codeStr.includes(text) && !nameStr.includes(text)) ok = false;
+        }
+
+        return ok;
+      });
+
+      // אם לא נבחרה שום רשות והתוצאה ריקה – ניפול חזרה לכל המאגר עם פילטרים בלבד
+      if (!viewRows.length && !getSelectedCodes().length) {
+        viewRows = allRows.filter(row => {
+          let ok = true;
+          const total = num(row[FIELD_TOTAL]);
+          if (minPop !== null && total < minPop) ok = false;
+          if (nafa && String(row[FIELD_NAFA] ?? "") !== nafa) ok = false;
+          if (council && String(row[FIELD_COUNCIL] ?? "") !== council) ok = false;
+          if (text) {
+            const codeStr = String(row[FIELD_CODE] ?? "").toLowerCase();
+            const nameStr = String(row[FIELD_NAME] ?? "").toLowerCase();
+            if (!codeStr.includes(text) && !nameStr.includes(text)) ok = false;
+          }
+          return ok;
+        });
+      }
+
+      currentPage = 1;
+      renderKPIs();
+      renderCharts();
+      renderTable();
+
+      if (scrollToTable) {
+        document.querySelector(".table-header")?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    function renderKPIs() {
+      if (!viewRows.length) {
+        kpiTotalPop.textContent = "0";
+        kpiCitiesCount.textContent = "0";
+        kpiChildrenShare.textContent = "–";
+        kpiSeniorsShare.textContent = "–";
+        kpiDependency.textContent = "–";
+        return;
+      }
+
+      const totalPop = viewRows.reduce((s, r) => s + num(r[FIELD_TOTAL]), 0);
+      const totalChildren = viewRows.reduce(
+        (s, r) => s + num(r[FIELD_0_5]) + num(r[FIELD_6_18]),
+        0
+      );
+      const totalSeniors = viewRows.reduce(
+        (s, r) => s + num(r[FIELD_65_PLUS]),
+        0
+      );
+      const workingAges = viewRows.reduce(
+        (s, r) =>
+          s +
+          num(r[FIELD_19_45]) +
+          num(r[FIELD_46_55]) +
+          num(r[FIELD_56_64]),
+        0
+      );
+      const depNumerator = totalChildren + totalSeniors;
+
+      kpiTotalPop.textContent = formatInt(totalPop);
+      kpiCitiesCount.textContent = viewRows.length.toLocaleString("he-IL");
+      kpiChildrenShare.textContent = formatPct(totalChildren, totalPop);
+      kpiSeniorsShare.textContent = formatPct(totalSeniors, totalPop);
+      kpiDependency.textContent = workingAges
+        ? (depNumerator / workingAges * 100).toFixed(1) + "%"
+        : "–";
+    }
+
+    // ---- charts ----
+    function renderCharts() {
+      const src = viewRows.length ? viewRows : allRows;
+      if (!src.length) {
+        if (popCompareChart) popCompareChart.destroy();
+        if (ageShareCompareChart) ageShareCompareChart.destroy();
+        return;
+      }
+
+      // לבדוק כמה רשויות להשוואה – לא יותר מדי (לנוחות תצוגה)
+      const maxForCharts = 20;
+      let rowsForCharts = [...src];
+
+      // אם אין בחירה מפורשת – ניקח את ה-20 עם האוכלוסייה הגדולה
+      if (!getSelectedCodes().length) {
+        rowsForCharts.sort((a, b) => num(b[FIELD_TOTAL]) - num(a[FIELD_TOTAL]));
+        rowsForCharts = rowsForCharts.slice(0, maxForCharts);
+      } else if (rowsForCharts.length > maxForCharts) {
+        rowsForCharts = rowsForCharts.slice(0, maxForCharts);
+      }
+
+      const labels = rowsForCharts.map(
+        r => String(r[FIELD_NAME]) + " (" + r[FIELD_CODE] + ")"
+      );
+      const totalValues = rowsForCharts.map(r => num(r[FIELD_TOTAL]));
+      const childrenShares = rowsForCharts.map(r => {
+        const total = num(r[FIELD_TOTAL]);
+        const children = num(r[FIELD_0_5]) + num(r[FIELD_6_18]);
+        return total ? (children / total) * 100 : 0;
+      });
+      const seniorShares = rowsForCharts.map(r => {
+        const total = num(r[FIELD_TOTAL]);
+        const seniors = num(r[FIELD_65_PLUS]);
+        return total ? (seniors / total) * 100 : 0;
+      });
+
+      // אוכלוסייה לפי רשות
+      if (popCompareChart) popCompareChart.destroy();
+      popCompareChart = new Chart(popCompareChartCanvas.getContext("2d"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "סה״כ אוכלוסייה",
+              data: totalValues
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => formatInt(ctx.parsed.y)
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } },
+            x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 0 } }
+          }
+        }
+      });
+
+      // % ילדים ו-% 65+
+      if (ageShareCompareChart) ageShareCompareChart.destroy();
+      ageShareCompareChart = new Chart(
+        ageShareCompareChartCanvas.getContext("2d"),
+        {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              { label: "% ילדים (0–18)", data: childrenShares },
+              { label: "% 65+", data: seniorShares }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: ctx => ctx.parsed.y.toFixed(1) + "%"
+                }
+              }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        }
+      );
+    }
+
+    // ---- table ----
+    function renderTable() {
+      if (!viewRows.length) {
+        dataTable.style.display = "none";
+        noDataMsg.style.display = "block";
+        noDataMsg.textContent =
+          allRows.length === 0
+            ? "לא נמצאו נתונים במאגר."
+            : "אין רשויות התואמות לפילטרים/בחירה.";
+        paginationEl.style.display = "none";
+        tableInfo.textContent = "0 רשומות.";
+        return;
+      }
+
+      noDataMsg.style.display = "none";
+      dataTable.style.display = "table";
+
+      const total = viewRows.length;
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      if (currentPage > totalPages) currentPage = totalPages || 1;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end = Math.min(start + PAGE_SIZE, total);
+      const pageRows = viewRows.slice(start, end);
+
+      tableBody.innerHTML = "";
+      pageRows.forEach(row => {
+        const tr = document.createElement("tr");
+        const total = num(row[FIELD_TOTAL]);
+        const children = num(row[FIELD_0_5]) + num(row[FIELD_6_18]);
+        const seniors = num(row[FIELD_65_PLUS]);
+        const working =
+          num(row[FIELD_19_45]) +
+          num(row[FIELD_46_55]) +
+          num(row[FIELD_56_64]);
+        const dep = working ? (children + seniors) / working * 100 : null;
+
+        const cells = [
+          row[FIELD_CODE],
+          row[FIELD_NAME],
+          row[FIELD_NAFA],
+          row[FIELD_COUNCIL],
+          formatInt(total),
+          formatInt(num(row[FIELD_0_5])),
+          formatInt(num(row[FIELD_6_18])),
+          formatInt(num(row[FIELD_19_45])),
+          formatInt(num(row[FIELD_46_55])),
+          formatInt(num(row[FIELD_56_64])),
+          formatInt(num(row[FIELD_65_PLUS])),
+          formatPct(children, total),
+          formatPct(seniors, total),
+          dep === null ? "–" : dep.toFixed(1) + "%"
+        ];
+
+        cells.forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val == null ? "" : String(val);
+          tr.appendChild(td);
+        });
+
+        tableBody.appendChild(tr);
+      });
+
+      tableInfo.textContent = `סה״כ ${total.toLocaleString(
+        "he-IL"
+      )} רשויות בתמונה הנוכחית. מציג ${start + 1}–${end}.`;
+
+      if (total > PAGE_SIZE) {
+        paginationEl.style.display = "flex";
+        paginationInfo.textContent = `עמוד ${currentPage} מתוך ${totalPages}`;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+      } else {
+        paginationEl.style.display = "none";
+      }
+    }
+
+    // ---- prediction calculator ----
+    function runPrediction() {
+      if (!allRows.length) return;
+      const code = predictionCityEl.value;
+      const row =
+        allRows.find(r => String(r[FIELD_CODE]) === String(code)) || null;
+      if (!row) {
+        predictionResultEl.textContent = "לא נמצאה רשות עבור החיזוי.";
+        return;
+      }
+
+      const years = parseInt(predictionYearsEl.value, 10);
+      const growth = parseFloat(predictionGrowthEl.value);
+      const startYear = predictionStartYearEl.value || "שנת בסיס";
+
+      if (!years || isNaN(years) || years <= 0) {
+        predictionResultEl.textContent = "אנא הזן מספר שנים חיובי.";
+        return;
+      }
+      if (isNaN(growth)) {
+        predictionResultEl.textContent = "אנא הזן שיעור גידול שנתי (יכול להיות גם 0).";
+        return;
+      }
+
+      const currentPop = num(row[FIELD_TOTAL]);
+      const factor = Math.pow(1 + growth / 100, years);
+      const futurePop = currentPop * factor;
+      const delta = futurePop - currentPop;
+      const pct = currentPop ? (delta / currentPop) * 100 : 0;
+
+      predictionResultEl.innerHTML =
+        "<div class='pred-main'>" +
+        "ביישוב <strong>" +
+        row[FIELD_NAME] +
+        "</strong> (" +
+        row[FIELD_CODE] +
+        ") עם אוכלוסייה נוכחית של " +
+        formatInt(currentPop) +
+        " תושבים,<br/>" +
+        "בהנחה של גידול שנתי קבוע של " +
+        growth.toFixed(1) +
+        "% למשך " +
+        years +
+        " שנים, " +
+        "האוכלוסייה החזויה תהיה כ-" +
+        formatInt(Math.round(futurePop)) +
+        " תושבים." +
+        "</div>" +
+        "<div class='muted'>" +
+        "תוספת אבסולוטית: " +
+        formatInt(Math.round(delta)) +
+        " (" +
+        pct.toFixed(1) +
+        "%). " +
+        (predictionStartYearEl.value
+          ? "אם שנת הבסיס היא " +
+            startYear +
+            ", שנת היעד היא " +
+            (parseInt(startYear, 10) + years) +
+            "."
+          : "") +
+        "<br/>" +
+        "שוב – זהו חישוב תיאורטי בלבד לפי שיעור הגידול שהזנת, " +
+        "לא תחזית רשמית של הלמ״ס." +
+        "</div>";
+    }
+
+    // ---- events ----
+    applyFiltersBtn.addEventListener("click", () => applyFilters(true));
+
+    searchTextEl.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyFilters(true);
+      }
+    });
+
+    selectTopByPopBtn.addEventListener("click", () => {
+      // בחר את 10 הרשויות הגדולות באוכלוסייה
+      const top = [...allRows]
+        .sort((a, b) => num(b[FIELD_TOTAL]) - num(a[FIELD_TOTAL]))
+        .slice(0, 10)
+        .map(r => String(r[FIELD_CODE]));
+      Array.from(municipalSelect.options).forEach(opt => {
+        opt.selected = top.includes(opt.value);
+      });
+    });
+
+    clearSelectionBtn.addEventListener("click", () => {
+      Array.from(municipalSelect.options).forEach(opt => (opt.selected = false));
+    });
+
+    prevPageBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    });
+
+    nextPageBtn.addEventListener("click", () => {
+      const totalPages = Math.ceil(viewRows.length / PAGE_SIZE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+      }
+    });
+
+    runPredictionBtn.addEventListener("click", runPrediction);
+
+    // init
+    window.addEventListener("load", () => {
+      loadAllData();
+    });
+  </script>
+</body>
+</html>
